@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    fmt::{Display, Formatter},
+    sync::Arc,
+};
 
 use thiserror::Error;
 use winreg::{
@@ -9,8 +12,8 @@ use winreg::{
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FaceData {
-    pub face_text: String,
-    pub face_color_index: u32,
+    pub text: String,
+    pub color_index: u32,
     // "FaceRotation_h3532958608"=hex(4):00,00,00,80,b0,7d,a7,3f
     // "VisorColor_h2089036713"=hex(4):00,00,00,e0,f2,b7,eb,3f
     // "FaceSize_h3883780417"=hex(4):00,00,00,a0,99,99,99,3f
@@ -26,12 +29,12 @@ impl FaceData {
         let t = Transaction::new()?;
         let game_keys =
             RegKey::predef(HKEY_CURRENT_USER).open_subkey_transacted(FaceData::CONFIG_KEY, &t)?;
-        let face_text_bytes = game_keys.get_raw_value(FaceData::FACE_TEXT_KEY)?;
-        let face_text = str_from_u8_nul_utf8(&face_text_bytes.bytes)?;
-        let face_color_index: u32 = game_keys.get_value(FaceData::FACE_COLOR_INDEX_KEY)?;
+        let text_bytes = game_keys.get_raw_value(FaceData::FACE_TEXT_KEY)?;
+        let text = str_from_u8_nul_utf8(&text_bytes.bytes)?;
+        let color_index: u32 = game_keys.get_value(FaceData::FACE_COLOR_INDEX_KEY)?;
         Ok(Self {
-            face_color_index,
-            face_text: face_text.to_string(),
+            color_index,
+            text: text.to_string(),
         })
     }
 
@@ -48,10 +51,10 @@ impl FaceData {
             FaceData::FACE_TEXT_KEY,
             &RegValue {
                 vtype: winreg::enums::REG_BINARY,
-                bytes: str_to_u8_nul_utf8(&self.face_text),
+                bytes: str_to_u8_nul_utf8(&self.text),
             },
         )?;
-        game_keys.set_value(FaceData::FACE_COLOR_INDEX_KEY, &self.face_color_index)?;
+        game_keys.set_value(FaceData::FACE_COLOR_INDEX_KEY, &self.color_index)?;
         t.commit()
     }
 }
@@ -59,8 +62,8 @@ impl FaceData {
 impl Default for FaceData {
     fn default() -> Self {
         Self {
-            face_text: ":)".to_string(),
-            face_color_index: 0,
+            text: ":)".to_string(),
+            color_index: 0,
         }
     }
 }
@@ -78,6 +81,46 @@ fn str_to_u8_nul_utf8(s: &str) -> Vec<u8> {
     let mut v = s.as_bytes().to_vec();
     v.push(0);
     v
+}
+
+fn utf16_len(s: &str) -> usize {
+    s.encode_utf16().count()
+}
+
+pub fn is_face_too_long(s: &str) -> bool {
+    utf16_len(s) > 3
+}
+
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub struct HexColor {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl HexColor {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+}
+
+impl Display for HexColor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{:02x}{:02x}{:02x}", self.r, self.g, self.b)
+    }
+}
+
+pub fn get_face_color(color: u32) -> HexColor {
+    match color {
+        0 => HexColor::new(250, 189, 0),
+        1 => HexColor::new(254, 134, 37),
+        2 => HexColor::new(254, 88, 68),
+        3 => HexColor::new(254, 131, 238),
+        4 => HexColor::new(76, 177, 254),
+        5 => HexColor::new(120, 235, 198),
+        6 => HexColor::new(141, 228, 28),
+        _ => HexColor::new(0, 0, 0),
+    }
 }
 
 #[derive(Error, Debug, Clone)]
