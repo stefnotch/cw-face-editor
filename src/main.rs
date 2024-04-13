@@ -18,11 +18,12 @@ fn main() {
 
 #[component]
 fn App() -> Element {
+    const STYLE_ASSET: &'static str = include_str!("./main.css");
     let mut face_data = use_signal(|| FaceData::load_from_registry());
     let ok_face_data = use_memo(move || face_data().unwrap_or_default());
 
     rsx! {
-        link { rel: "stylesheet", href: "main.css" }
+        style { dangerous_inner_html: STYLE_ASSET }
         match face_data() {
             Ok(face) => rsx! {FaceEditor {
                 face: face,

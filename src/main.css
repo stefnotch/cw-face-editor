@@ -1,9 +1,9 @@
 html,
 body {
-  background-color: #111216;
+  background-color: rgb(240, 240, 240);
   height: 100%;
   margin: 0;
-  color: white;
+  color: black;
 }
 
 #main {
@@ -21,9 +21,27 @@ body {
   width: 50vmin;
   height: 50vmin;
   text-decoration: none;
-  border: white 2px solid;
+  border: black 4px solid;
   border-radius: 100%;
   padding: 10px;
-  font-size: 2em;
+  font-size: 20vmin;
   text-align: center;
+}
+
+#face-editor #face-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+#face-editor button {
+  background-color: #111216;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+#face-editor button:hover {
+  background-color: #424655;
 }
